@@ -1,8 +1,9 @@
-import { api } from '@/api';
-import type { Driver, LicenseType } from '@/types/types';
 import React from 'react';
 
-const LICENSES: LicenseType[] = ['A', 'B', 'C', 'D', 'E'];
+import { api } from '@/api';
+import { useList } from '@/hooks/useList';
+import type { Driver, LicenseType } from '@/types/types';
+import { handleHttpError } from '@/utils/errors';
 
 export type UiTheme = {
   base: string;
@@ -12,54 +13,84 @@ export type UiTheme = {
   lineSoft: string;
 };
 
+type CSSVars = React.CSSProperties & Record<`--${string}`, string>;
+
+const LICENSES: LicenseType[] = ['A', 'B', 'C', 'D', 'E'];
+
 export default function Drivers({ THEME }: { THEME: UiTheme }) {
-  const [list, setList] = React.useState<Driver[]>([]);
+  const {
+    items: list,
+    isLoading: loading,
+    error,
+    reload,
+  } = useList<Driver>('/drivers/');
+
   const [form, setForm] = React.useState<{
     name: string;
     license_type: LicenseType;
-  }>({ name: '', license_type: 'B' });
-  const [error, setError] = React.useState<string>('');
-
-  async function load() {
-    const r = await api.get('/drivers/');
-    const data = r.data;
-    setList(Array.isArray(data) ? data : data.results);
-  }
-  React.useEffect(() => {
-    load();
-  }, []);
+  }>({
+    name: '',
+    license_type: 'B',
+  });
+  const [submitting, setSubmitting] = React.useState(false);
+  const [formError, setFormError] = React.useState('');
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setFormError('');
+
+    const name = form.name.trim();
+    if (!name || !form.license_type) {
+      setFormError('Preencha todos os campos');
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      await api.post('/drivers/', form);
+      await api.post('/drivers/', { name, license_type: form.license_type });
       setForm({ name: '', license_type: 'B' });
-      load();
+      await reload();
     } catch (err) {
-      const e = err as { response?: { data?: unknown } };
-      setError(e?.response?.data ? JSON.stringify(e.response.data) : 'Error');
+      handleHttpError(err, setFormError);
+    } finally {
+      setSubmitting(false);
     }
   }
 
+  const themeVars: CSSVars = {
+    '--line': THEME.line,
+    '--accent': THEME.accent,
+    '--base': THEME.base,
+  };
+
   return (
-    <div className="space-y-4">
-      <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
+    <div className="space-y-4" style={themeVars}>
+      <form
+        onSubmit={onSubmit}
+        className="flex flex-wrap items-end gap-3"
+        aria-busy={submitting}
+      >
         <div>
-          <label className="mb-1 block text-xs">Name</label>
+          <label htmlFor="driver-name" className="mb-1 block text-xs">
+            Name
+          </label>
           <input
+            id="driver-name"
             className="rounded-md border px-3 py-2"
-            style={{ borderColor: THEME.line }}
+            style={{ borderColor: 'var(--line)' }}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             placeholder="Driver name"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs">License</label>
+          <label htmlFor="driver-license" className="mb-1 block text-xs">
+            License
+          </label>
           <select
+            id="driver-license"
             className="rounded-md border px-3 py-2"
-            style={{ borderColor: THEME.line }}
+            style={{ borderColor: 'var(--line)' }}
             value={form.license_type}
             onChange={(e) =>
               setForm({ ...form, license_type: e.target.value as LicenseType })
@@ -73,16 +104,27 @@ export default function Drivers({ THEME }: { THEME: UiTheme }) {
           </select>
         </div>
         <button
-          type="button"
-          className="rounded-md px-3 py-2 text-sm font-semibold"
-          style={{ backgroundColor: THEME.accent, color: THEME.base }}
+          type="submit"
+          className="rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-50"
+          style={{ backgroundColor: 'var(--accent)', color: 'var(--base)' }}
+          disabled={submitting || loading || !form.name}
         >
-          Create
+          {submitting ? 'Creating...' : 'Create'}
         </button>
-        {error && <div className="text-xs text-red-600">{error}</div>}
+        {(formError || error) && (
+          <div className="text-xs text-red-600" aria-live="polite">
+            {formError || error}
+          </div>
+        )}
       </form>
 
-      <ul className="divide-y" style={{ borderColor: THEME.line }}>
+      {loading && <div className="text-sm text-gray-500">Carregando...</div>}
+
+      <ul
+        className="divide-y"
+        style={{ borderColor: 'var(--line)' }}
+        aria-busy={loading}
+      >
         {list.map((d) => (
           <li key={d.id} className="flex items-center justify-between py-2">
             <span>
