@@ -5,20 +5,10 @@ import { usePaginatedResource } from '@/hooks/usePaginatedResource';
 
 import { api } from '@/api';
 import type { Assignment, Driver, Truck } from '@/types/types';
+import { handleHttpError } from '@/utils/errors';
 import type { UiTheme } from '../Drivers';
 
-function toErrorMessage(err: any): string {
-  if (err?.response?.data) {
-    try {
-      return typeof err.response.data === 'string'
-        ? err.response.data
-        : JSON.stringify(err.response.data);
-    } catch {
-      return 'Error';
-    }
-  }
-  return err?.message ?? 'Error';
-}
+type CSSVars = React.CSSProperties & Record<`--${string}`, string>;
 
 export default function Assignments({ THEME }: { THEME: UiTheme }) {
   const { items: drivers } = useList<Driver>('/drivers/');
@@ -67,7 +57,7 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
       setForm({ driver: '', truck: '', date: '' });
       await loadAssignments();
     } catch (err) {
-      setFormError(toErrorMessage(err));
+      handleHttpError(err, setFormError);
     } finally {
       setSubmitting(false);
     }
@@ -76,11 +66,13 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
   return (
     <div
       className="space-y-4"
-      style={{
-        ['--line' as any]: THEME.line,
-        ['--accent' as any]: THEME.accent,
-        ['--base' as any]: THEME.base,
-      }}
+      style={
+        {
+          '--line': THEME.line,
+          '--accent': THEME.accent,
+          '--base': THEME.base,
+        } as CSSVars
+      }
     >
       <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
         <div>
