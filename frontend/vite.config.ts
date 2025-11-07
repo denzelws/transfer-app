@@ -12,4 +12,7 @@ export default defineConfig({
       '@': path.resolve('./src'),
     },
   },
+  optimizeDeps: {
+    include: ['boring-avatars', 'react', 'react-dom', 'react/jsx-runtime'],
+  },
 });

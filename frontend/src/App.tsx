@@ -5,6 +5,7 @@ import Drivers from './components/Drivers';
 import Logo from './components/Logo';
 import Trucks from './components/Trucks';
 import { alpha, Card, IconBtn, SectionTitle, Tag, THEME } from './ui';
+import { Avatar } from './ui/Avatar';
 
 function App() {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
@@ -71,37 +72,55 @@ function App() {
       <div
         className="py-8"
         style={{
-          background: `linear-gradient(90deg, ${alpha(THEME.secondary, 0.035)} 0 360px, transparent 360px, transparent 100%)`,
+          background: THEME.secondary,
         }}
       >
         <div className="mx-auto grid max-w-7xl grid-cols-12 gap-6 px-4">
           {sidebarOpen && (
             <aside className="col-span-1 hidden md:flex md:flex-col md:items-center md:gap-3">
-              <IconBtn label="Dashboard">
-                <i className="fa-solid fa-grid-2" />
+              <IconBtn
+                label="Dashboard"
+                aria-label="Dashboard"
+                onClick={() => setTab('assignments')}
+                className={
+                  tab === 'assignments' ? 'ring-1 ring-[#14D64D1f]' : ''
+                }
+              >
+                <i className="fa-solid fa-table-columns" />
               </IconBtn>
 
-              <IconBtn label="Trucks" onClick={() => setTab('trucks')}>
-                <i className="fa-solid fa-truck" />
+              <IconBtn
+                label="Trucks"
+                aria-label="Trucks"
+                onClick={() => setTab('trucks')}
+                className={tab === 'trucks' ? 'ring-1 ring-[#14D64D1f]' : ''}
+              >
+                <span className="text-lg" aria-hidden>
+                  🚚
+                </span>
               </IconBtn>
 
-              <IconBtn label="Drivers" onClick={() => setTab('drivers')}>
-                <i className="fa-solid fa-id-card" />
+              <IconBtn
+                label="Drivers"
+                aria-label="Drivers"
+                onClick={() => setTab('drivers')}
+                className={tab === 'drivers' ? 'ring-1 ring-[#14D64D1f]' : ''}
+              >
+                <div className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full bg-white">
+                  <Avatar name="drivers-sidebar" size={20} variant="beam" />
+                </div>
               </IconBtn>
 
-              <IconBtn label="Search">
+              <IconBtn label="Search" aria-label="Search">
                 <i className="fa-solid fa-magnifying-glass" />
-              </IconBtn>
-              <IconBtn label="Settings">
-                <i className="fa-solid fa-gear" />
               </IconBtn>
             </aside>
           )}
-
           <div className="col-span-12 space-y-4 sm:col-span-5 lg:col-span-3">
             <Card>
               <SectionTitle>Available Resources</SectionTitle>
               <div className="space-y-3 px-5 pb-5">
+                {/* Trucks */}
                 <div
                   className="flex items-center gap-3 rounded-xl p-3"
                   style={{
@@ -116,7 +135,9 @@ function App() {
                       color: THEME.accent,
                     }}
                   >
-                    <i className="fa-solid fa-truck" />
+                    <span className="text-lg" aria-hidden>
+                      🚚
+                    </span>
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">Trucks</p>
@@ -128,6 +149,8 @@ function App() {
                     </p>
                   </div>
                 </div>
+
+                {/* Drivers */}
                 <div
                   className="flex items-center gap-3 rounded-xl p-3"
                   style={{
@@ -142,7 +165,7 @@ function App() {
                       color: THEME.accent,
                     }}
                   >
-                    <i className="fa-regular fa-id-badge" />
+                    <Avatar name="drivers-tile" size={24} variant="beam" />
                   </div>
                   <div className="flex-1">
                     <p className="text-sm font-medium">Drivers</p>

@@ -4,6 +4,8 @@ import { api } from '@/api';
 import { useList } from '@/hooks/useList';
 import type { Driver, LicenseType } from '@/types/types';
 import { handleHttpError } from '@/utils/errors';
+import EntityCard from '../EntityCard';
+import EntityModal from '../EntityModal';
 
 export type UiTheme = {
   base: string;
@@ -35,6 +37,31 @@ export default function Drivers({ THEME }: { THEME: UiTheme }) {
   const [submitting, setSubmitting] = React.useState(false);
   const [formError, setFormError] = React.useState('');
 
+  // Estado do modal genérico
+  const [open, setOpen] = React.useState(false);
+  const [current, setCurrent] = React.useState<Driver | null>(null);
+  const [values, setValues] = React.useState<{
+    name: string;
+    license_type: LicenseType;
+  }>({
+    name: '',
+    license_type: 'B',
+  });
+  const [busy, setBusy] = React.useState(false);
+  const [modalError, setModalError] = React.useState('');
+
+  function openModal(d: Driver) {
+    setCurrent(d);
+    setValues({ name: d.name, license_type: d.license_type });
+    setModalError('');
+    setOpen(true);
+  }
+
+  function closeModal() {
+    setOpen(false);
+    setCurrent(null);
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setFormError('');
@@ -57,6 +84,45 @@ export default function Drivers({ THEME }: { THEME: UiTheme }) {
     }
   }
 
+  async function onSave() {
+    if (!current) return;
+    const name = values.name.trim();
+    if (!name) {
+      setModalError('Nome não pode ser vazio.');
+      return;
+    }
+    setBusy(true);
+    setModalError('');
+    try {
+      await api.put(`/drivers/${current.id}/`, {
+        name,
+        license_type: values.license_type,
+      });
+      await reload();
+      closeModal();
+    } catch (err) {
+      handleHttpError(err, setModalError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onDelete() {
+    if (!current) return;
+    if (!confirm(`Remover ${current.name}?`)) return;
+    setBusy(true);
+    setModalError('');
+    try {
+      await api.delete(`/drivers/${current.id}/`);
+      await reload();
+      closeModal();
+    } catch (err) {
+      handleHttpError(err, setModalError);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   const themeVars: CSSVars = {
     '--line': THEME.line,
     '--accent': THEME.accent,
@@ -65,6 +131,7 @@ export default function Drivers({ THEME }: { THEME: UiTheme }) {
 
   return (
     <div className="space-y-4" style={themeVars}>
+      {/* Formulário de criação */}
       <form
         onSubmit={onSubmit}
         className="flex flex-wrap items-end gap-3"
@@ -120,19 +187,76 @@ export default function Drivers({ THEME }: { THEME: UiTheme }) {
 
       {loading && <div className="text-sm text-gray-500">Carregando...</div>}
 
-      <ul
-        className="divide-y"
-        style={{ borderColor: 'var(--line)' }}
+      <div
+        className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3"
         aria-busy={loading}
       >
-        {list.map((d) => (
-          <li key={d.id} className="flex items-center justify-between py-2">
-            <span>
-              {d.name} — {d.license_type}
-            </span>
-          </li>
+        {(list ?? []).map((d) => (
+          <EntityCard
+            key={d.id}
+            kind="driver"
+            title={d.name}
+            badge={`License ${d.license_type}`}
+            avatarSeed={d.name}
+            iconFallback={<i className="fa-regular fa-id-badge" />}
+            onClick={() => openModal(d)}
+          />
         ))}
-      </ul>
+      </div>
+
+      <EntityModal
+        open={open}
+        onClose={closeModal}
+        header={{
+          title: current?.name ?? 'Driver',
+          badge: current ? `License ${current.license_type}` : undefined,
+          avatarSeed: current?.name,
+          iconFallback: <i className="fa-regular fa-id-badge" />,
+          subtitle: 'Driver',
+        }}
+        values={values}
+        setValues={(updater) => setValues((prev) => updater(prev))}
+        renderForm={({ values, setValues }) => (
+          <>
+            <div>
+              <label className="mb-1 block text-xs">Name</label>
+              <input
+                className="w-full rounded-md border px-3 py-2"
+                style={{ borderColor: 'var(--line)' }}
+                value={values.name}
+                onChange={(e) =>
+                  setValues((prev) => ({ ...prev, name: e.target.value }))
+                }
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs">License</label>
+              <select
+                className="w-full rounded-md border px-3 py-2"
+                style={{ borderColor: 'var(--line)' }}
+                value={values.license_type}
+                onChange={(e) =>
+                  setValues((prev) => ({
+                    ...prev,
+                    license_type: e.target.value as LicenseType,
+                  }))
+                }
+              >
+                {LICENSES.map((l) => (
+                  <option key={l} value={l}>
+                    {l}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
+        onSave={onSave}
+        onDelete={onDelete}
+        busy={busy}
+        error={modalError}
+        accentColor={THEME.accent}
+      />
     </div>
   );
 }

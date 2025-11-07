@@ -63,6 +63,26 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
     }
   }
 
+  function getDriverName(
+    aDriver: Assignment['driver'],
+    driversById: Map<number, Driver>,
+  ) {
+    if (typeof aDriver === 'object' && aDriver && 'name' in aDriver) {
+      return (aDriver as Driver).name;
+    }
+    return driversById.get(aDriver as number)?.name ?? `Driver ${aDriver}`;
+  }
+
+  function getTruckPlate(
+    aTruck: Assignment['truck'],
+    trucksById: Map<number, Truck>,
+  ) {
+    if (typeof aTruck === 'object' && aTruck && 'plate' in aTruck) {
+      return (aTruck as Truck).plate;
+    }
+    return trucksById.get(aTruck as number)?.plate ?? `Truck ${aTruck}`;
+  }
+
   return (
     <div
       className="space-y-4"
@@ -146,19 +166,51 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
       )}
 
       <ul
-        className="divide-y"
-        style={{ borderColor: 'var(--line)' }}
+        className="px-1"
+        style={{
+          borderTop: '1px solid var(--line)',
+          borderBottom: '1px solid var(--line)',
+        }}
         aria-busy={loadingAssignments}
       >
-        {assignments.map((a) => (
-          <li key={a.id} className="flex items-center justify-between py-2">
-            <span>
-              #{a.id} — Driver {driversById.get(a.driver)?.name ?? a.driver} —
-              Truck {trucksById.get(a.truck)?.plate ?? a.truck} —{' '}
-              {new Date(a.date).toLocaleDateString()}
-            </span>
-          </li>
-        ))}
+        {assignments.map((a) => {
+          const driverName = getDriverName(a.driver, driversById);
+          const truckPlate = getTruckPlate(a.truck, trucksById);
+          const date = new Date(a.date).toLocaleDateString();
+
+          return (
+            <li key={a.id}>
+              <div
+                className="flex items-center justify-between py-3 transition-colors hover:bg-[rgba(0,0,0,0.02)]"
+                style={{ borderBottom: '1px solid var(--line)' }}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 text-sm">
+                    <span
+                      className="inline-flex items-center rounded-md border px-1.5 py-0.5 text-[11px] font-medium"
+                      style={{
+                        borderColor: 'var(--line)',
+                        color: 'rgba(32,41,49,0.75)',
+                      }}
+                    >
+                      #{a.id}
+                    </span>
+                    <span className="truncate">
+                      {driverName} — {truckPlate}
+                    </span>
+                  </div>
+                  <div
+                    className="mt-0.5 text-xs"
+                    style={{ color: 'rgba(32,41,49,0.65)' }}
+                  >
+                    {date}
+                  </div>
+                </div>
+                {/* Espaço para futuras ações (ex.: remover/editar) */}
+              </div>
+            </li>
+          );
+        })}
       </ul>
 
       <div className="flex items-center gap-2">

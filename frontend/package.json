@@ -1,5 +1,5 @@
 {
-  "name": "template-vite-react-ts-tailwind",
+  "name": "loadsmart-challenge",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fortawesome/fontawesome-free": "7.1.0",
+    "axios": "1.13.2",
+    "boring-avatars": "2.0.4",
     "react": "19.1.1",
     "react-dom": "19.1.1"
   },
