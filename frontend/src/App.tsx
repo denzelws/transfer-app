@@ -2,6 +2,7 @@ import React from 'react';
 
 import Assignments from './components/Assignments';
 import Drivers from './components/Drivers';
+import Logo from './components/Logo';
 import Trucks from './components/Trucks';
 import { alpha, Card, IconBtn, SectionTitle, Tag, THEME } from './ui';
 
@@ -43,13 +44,7 @@ function App() {
               Menu
             </button>
             <div className="ml-1 flex items-center gap-2">
-              <i
-                className="fa-solid fa-truck-fast"
-                style={{ color: THEME.accent }}
-              />
-              <span className="text-[15px] font-semibold tracking-tight">
-                LoadSmart
-              </span>
+              <Logo fill="#14D64D" className="h-6" />
             </div>
           </div>
           <div
