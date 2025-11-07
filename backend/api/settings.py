@@ -9,7 +9,6 @@ DEBUG = True
 ALLOWED_HOSTS = ["localhost", "127.0.0.1", "[::1]"]
 
 INSTALLED_APPS = [
-    # Django apps
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -18,10 +17,9 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
-    # Seus apps (adicionaremos em próximas etapas)
     "drivers",
     "trucks",
-    # 'assignments',
+    "assignments",
 ]
 
 MIDDLEWARE = [

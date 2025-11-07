@@ -11,7 +11,7 @@ PLATE_REGEX = re.compile(r"^[A-Z]{3}\d[A-Z0-9]\d{2}$")
 def validate_plate(value: str):
     value = value.upper()
     if not PLATE_REGEX.match(value):
-        raise ValidationError("Invalid plate format (expected Mercosul pattern, e.g., ABC1D23).")vb 
+        raise ValidationError("Invalid plate format (expected Mercosul pattern, e.g., ABC1D23).")
 
 
 class Truck(models.Model):
