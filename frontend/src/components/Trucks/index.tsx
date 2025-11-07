@@ -1,12 +1,25 @@
-import { api } from '@/api';
-import type { LicenseType, Truck } from '@/types/types';
 import React from 'react';
+
+import { api } from '@/api';
+
+import type { LicenseType, Truck } from '@/types/types';
+
+import { useList } from '@/hooks/useList';
+import { handleHttpError } from '@/utils/errors';
 import type { UiTheme } from '../Drivers';
+
+type CSSVars = React.CSSProperties & Record<`--${string}`, string>;
 
 const LICENSES: LicenseType[] = ['A', 'B', 'C', 'D', 'E'];
 
 export default function Trucks({ THEME }: { THEME: UiTheme }) {
-  const [list, setList] = React.useState<Truck[]>([]);
+  const {
+    items: list,
+    isLoading: loading,
+    error,
+    reload,
+  } = useList<Truck>('/trucks/');
+
   const [form, setForm] = React.useState<
     Pick<Truck, 'plate' | 'model' | 'year' | 'minimum_license_type'>
   >({
@@ -15,73 +28,118 @@ export default function Trucks({ THEME }: { THEME: UiTheme }) {
     year: new Date().getFullYear(),
     minimum_license_type: 'B',
   });
-  const [error, setError] = React.useState<string>('');
+  const [submitting, setSubmitting] = React.useState(false);
+  const [formError, setFormError] = React.useState('');
 
-  async function load() {
-    const r = await api.get('/trucks/');
-    const data = r.data;
-    setList(Array.isArray(data) ? data : data.results);
-  }
-  React.useEffect(() => {
-    load();
-  }, []);
+  const currentYear = new Date().getFullYear();
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setFormError('');
+
+    const plate = form.plate.trim().toUpperCase();
+    const model = form.model.trim();
+    const year = form.year;
+
+    if (!plate || !model || !year || !form.minimum_license_type) {
+      setFormError('Preencha todos os campos');
+      return;
+    }
+    if (year < 1950 || year > currentYear + 1) {
+      setFormError(`Ano deve estar entre 1950 e ${currentYear + 1}`);
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      await api.post('/trucks/', { ...form, year: Number(form.year) });
+      await api.post('/trucks/', {
+        plate,
+        model,
+        year,
+        minimum_license_type: form.minimum_license_type,
+      });
       setForm({
         plate: '',
         model: '',
         year: new Date().getFullYear(),
         minimum_license_type: 'B',
       });
-      load();
+      await reload();
     } catch (err) {
-      const e = err as { response?: { data?: unknown } };
-      setError(e?.response?.data ? JSON.stringify(e.response.data) : 'Error');
+      handleHttpError(err, setFormError);
+    } finally {
+      setSubmitting(false);
     }
   }
 
+  const themeVars: CSSVars = {
+    '--line': THEME.line,
+    '--accent': THEME.accent,
+    '--base': THEME.base,
+  };
+
   return (
-    <div className="space-y-4">
-      <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
+    <div className="space-y-4" style={themeVars}>
+      <form
+        onSubmit={onSubmit}
+        className="flex flex-wrap items-end gap-3"
+        aria-busy={submitting}
+      >
         <div>
-          <label className="mb-1 block text-xs">Plate</label>
+          <label htmlFor="plate" className="mb-1 block text-xs">
+            Plate
+          </label>
           <input
+            id="plate"
             className="rounded-md border px-3 py-2"
-            style={{ borderColor: THEME.line }}
+            style={{ borderColor: 'var(--line)' }}
             value={form.plate}
             onChange={(e) => setForm({ ...form, plate: e.target.value })}
             placeholder="ABC1D23"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs">Model</label>
+          <label htmlFor="model" className="mb-1 block text-xs">
+            Model
+          </label>
           <input
+            id="model"
             className="rounded-md border px-3 py-2"
-            style={{ borderColor: THEME.line }}
+            style={{ borderColor: 'var(--line)' }}
             value={form.model}
             onChange={(e) => setForm({ ...form, model: e.target.value })}
             placeholder="Volvo FH"
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs">Year</label>
+          <label htmlFor="year" className="mb-1 block text-xs">
+            Year
+          </label>
           <input
+            id="year"
             type="number"
+            inputMode="numeric"
             className="rounded-md border px-3 py-2"
-            style={{ borderColor: THEME.line }}
+            style={{ borderColor: 'var(--line)' }}
             value={form.year}
-            onChange={(e) => setForm({ ...form, year: Number(e.target.value) })}
+            onChange={(e) =>
+              setForm({
+                ...form,
+                year: e.currentTarget.valueAsNumber || currentYear,
+              })
+            }
+            min={1950}
+            max={currentYear + 1}
           />
         </div>
         <div>
-          <label className="mb-1 block text-xs">Min License</label>
+          <label htmlFor="min-license" className="mb-1 block text-xs">
+            Min License
+          </label>
           <select
+            id="min-license"
             className="rounded-md border px-3 py-2"
-            style={{ borderColor: THEME.line }}
+            style={{ borderColor: 'var(--line)' }}
             value={form.minimum_license_type}
             onChange={(e) =>
               setForm({
@@ -98,16 +156,29 @@ export default function Trucks({ THEME }: { THEME: UiTheme }) {
           </select>
         </div>
         <button
-          type="button"
-          className="rounded-md px-3 py-2 text-sm font-semibold"
-          style={{ backgroundColor: THEME.accent, color: THEME.base }}
+          type="submit"
+          className="rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-50"
+          style={{ backgroundColor: 'var(--accent)', color: 'var(--base)' }}
+          disabled={
+            submitting || loading || !form.plate || !form.model || !form.year
+          }
         >
-          Create
+          {submitting ? 'Creating...' : 'Create'}
         </button>
-        {error && <div className="text-xs text-red-600">{error}</div>}
+        {(formError || error) && (
+          <div className="text-xs text-red-600" aria-live="polite">
+            {formError || error}
+          </div>
+        )}
       </form>
 
-      <ul className="divide-y" style={{ borderColor: THEME.line }}>
+      {loading && <div className="text-sm text-gray-500">Carregando...</div>}
+
+      <ul
+        className="divide-y"
+        style={{ borderColor: 'var(--line)' }}
+        aria-busy={loading}
+      >
         {list.map((t) => (
           <li key={t.id} className="flex items-center justify-between py-2">
             <span>
