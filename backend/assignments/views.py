@@ -1,5 +1,6 @@
 from django.db import IntegrityError
-from rest_framework import viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, viewsets
 from rest_framework.exceptions import ValidationError
 
 from .models import Assignment
@@ -9,6 +10,9 @@ from .serializers import AssignmentSerializer
 class AssignmentViewSet(viewsets.ModelViewSet):
     queryset = Assignment.objects.all().order_by("-date", "id")
     serializer_class = AssignmentSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ["driver", "truck", "date"]
+    ordering_fields = ["date", "id"]
 
     def perform_create(self, serializer):
         try:

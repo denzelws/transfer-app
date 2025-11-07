@@ -1,6 +1,7 @@
+# backend/assignments/serializers.py
 from rest_framework import serializers
 
-from .models import LICENSE_ORDER, Assignment
+from .models import Assignment
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
@@ -9,22 +10,28 @@ class AssignmentSerializer(serializers.ModelSerializer):
         fields = ["id", "driver", "truck", "date"]
 
     def validate(self, attrs):
-        driver = attrs["driver"]
-        truck = attrs["truck"]
-        date = attrs["date"]
+        driver = attrs.get("driver") or getattr(self.instance, "driver", None)
+        truck = attrs.get("truck") or getattr(self.instance, "truck", None)
+        date = attrs.get("date") or getattr(self.instance, "date", None)
 
-        qs = Assignment.objects.filter(date=date)
+        if not (driver and truck and date):
+            return attrs
+
+        if driver.license_type < truck.minimum_license_type:
+            raise serializers.ValidationError(
+                f"Driver license '{driver.license_type}' is insufficient for truck requiring '{truck.minimum_license_type}'."  # noqa: E501
+            )
+
+        qs = Assignment.objects.filter(driver=driver, date=date)
         if self.instance:
             qs = qs.exclude(pk=self.instance.pk)
-
-        if qs.filter(driver=driver).exists():
+        if qs.exists():
             raise serializers.ValidationError("This driver is already assigned on this date.")
-        if qs.filter(truck=truck).exists():
+
+        qs = Assignment.objects.filter(truck=truck, date=date)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
             raise serializers.ValidationError("This truck is already assigned on this date.")
 
-        if LICENSE_ORDER[driver.license_type] < LICENSE_ORDER[truck.minimum_license_type]:
-            raise serializers.ValidationError(
-                f"Driver license '{driver.license_type}' is insufficient for truck requiring "
-                f"'{truck.minimum_license_type}'."
-            )
         return attrs
