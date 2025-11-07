@@ -1,93 +1,61 @@
 import { api } from '@/api';
+import { useList } from '@/hooks/useList';
+import { usePaginatedResource } from '@/hooks/usePaginatedResource';
 import type { Assignment, Driver, Truck } from '@/types/types';
 import React from 'react';
 import type { UiTheme } from '../Drivers';
 
-type Page<T> = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-};
+function toErrorMessage(err: any): string {
+  if (err?.response?.data) {
+    try {
+      return typeof err.response.data === 'string'
+        ? err.response.data
+        : JSON.stringify(err.response.data);
+    } catch {
+      return 'Error';
+    }
+  }
+  return err?.message ?? 'Error';
+}
 
 export default function Assignments({ THEME }: { THEME: UiTheme }) {
-  const [drivers, setDrivers] = React.useState<Driver[]>([]);
-  const [trucks, setTrucks] = React.useState<Truck[]>([]);
-  const [items, setItems] = React.useState<Assignment[]>([]);
-  const [page, setPage] = React.useState(1);
-  const [nextUrl, setNextUrl] = React.useState<string | null>(null);
-  const [prevUrl, setPrevUrl] = React.useState<string | null>(null);
-  const [form, setForm] = React.useState<{
-    driver: string;
-    truck: string;
-    date: string;
-  }>({
-    driver: '',
-    truck: '',
-    date: '',
-  });
-  const [error, setError] = React.useState<string>('');
-
-  React.useEffect(() => {
-    (async () => {
-      try {
-        const [d, t] = await Promise.all([
-          api.get('/drivers/'),
-          api.get('/trucks/'),
-        ]);
-        const driversData = Array.isArray(d.data)
-          ? d.data
-          : (d.data?.results ?? d.data ?? []);
-        const trucksData = Array.isArray(t.data)
-          ? t.data
-          : (t.data?.results ?? t.data ?? []);
-        setDrivers(Array.isArray(driversData) ? driversData : []);
-        setTrucks(Array.isArray(trucksData) ? trucksData : []);
-      } catch {
-        setDrivers([]);
-        setTrucks([]);
-      }
-    })();
-  }, []);
-
-  const loadAssignments = React.useCallback(
-    async (url?: string) => {
-      try {
-        const path = url
-          ? url.replace(`${import.meta.env.VITE_API_BASE}/api`, '')
-          : `/assignments/?page=${page}&page_size=5&ordering=-date`;
-        const r = await api.get(path);
-        const payload = r.data;
-
-        if (Array.isArray(payload)) {
-          setItems(payload);
-          setNextUrl(null);
-          setPrevUrl(null);
-        } else if (Array.isArray(payload?.results)) {
-          setItems(payload.results);
-          setNextUrl(payload.next ?? null);
-          setPrevUrl(payload.previous ?? null);
-        } else {
-          setItems([]);
-          setNextUrl(null);
-          setPrevUrl(null);
-        }
-      } catch {
-        setItems([]);
-        setNextUrl(null);
-        setPrevUrl(null);
-      }
-    },
-    [page],
+  const { items: drivers } = useList<Driver>('/drivers/');
+  const { items: trucks } = useList<Truck>('/trucks/');
+  const {
+    items: assignments,
+    nextUrl,
+    prevUrl,
+    isLoading: loadingAssignments,
+    error: assignmentsError,
+    load: loadAssignments,
+  } = usePaginatedResource<Assignment>(
+    '/assignments/?page_size=5&ordering=-date',
   );
 
-  React.useEffect(() => {
-    void loadAssignments();
-  }, [loadAssignments]);
+  const [form, setForm] = React.useState({ driver: '', truck: '', date: '' });
+  const [formError, setFormError] = React.useState('');
+  const [submitting, setSubmitting] = React.useState(false);
+
+  const updateForm = (k: keyof typeof form) => (v: string) =>
+    setForm((f) => ({ ...f, [k]: v }));
+
+  const driversById = React.useMemo(
+    () => new Map(drivers.map((d) => [d.id, d])),
+    [drivers],
+  );
+  const trucksById = React.useMemo(
+    () => new Map(trucks.map((t) => [t.id, t])),
+    [trucks],
+  );
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setFormError('');
+    if (!form.driver || !form.truck || !form.date) {
+      setFormError('Preencha todos os campos');
+      return;
+    }
+    setSubmitting(true);
     try {
       await api.post('/assignments/', {
         driver: Number(form.driver),
@@ -95,26 +63,37 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
         date: form.date,
       });
       setForm({ driver: '', truck: '', date: '' });
-      void loadAssignments();
+      await loadAssignments();
     } catch (err) {
-      const e = err as { response?: { data?: unknown } };
-      setError(e?.response?.data ? JSON.stringify(e.response.data) : 'Error');
+      setFormError(toErrorMessage(err));
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
-    <div className="space-y-4">
+    <div
+      className="space-y-4"
+      style={{
+        ['--line' as any]: THEME.line,
+        ['--accent' as any]: THEME.accent,
+        ['--base' as any]: THEME.base,
+      }}
+    >
       <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
         <div>
-          <label className="mb-1 block text-xs">Driver</label>
+          <label htmlFor="driver" className="mb-1 block text-xs">
+            Driver
+          </label>
           <select
+            id="driver"
             className="rounded-md border px-3 py-2"
-            style={{ borderColor: THEME.line }}
+            style={{ borderColor: 'var(--line)' }}
             value={form.driver}
-            onChange={(e) => setForm({ ...form, driver: e.target.value })}
+            onChange={(e) => updateForm('driver')(e.target.value)}
           >
             <option value="">Select driver</option>
-            {(drivers ?? []).map((d) => (
+            {drivers.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name} ({d.license_type})
               </option>
@@ -122,15 +101,18 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs">Truck</label>
+          <label htmlFor="truck" className="mb-1 block text-xs">
+            Truck
+          </label>
           <select
+            id="truck"
             className="rounded-md border px-3 py-2"
-            style={{ borderColor: THEME.line }}
+            style={{ borderColor: 'var(--line)' }}
             value={form.truck}
-            onChange={(e) => setForm({ ...form, truck: e.target.value })}
+            onChange={(e) => updateForm('truck')(e.target.value)}
           >
             <option value="">Select truck</option>
-            {(trucks ?? []).map((t) => (
+            {trucks.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.plate} — min {t.minimum_license_type}
               </option>
@@ -138,30 +120,48 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs">Date</label>
+          <label htmlFor="date" className="mb-1 block text-xs">
+            Date
+          </label>
           <input
+            id="date"
             type="date"
             className="rounded-md border px-3 py-2"
-            style={{ borderColor: THEME.line }}
+            style={{ borderColor: 'var(--line)' }}
             value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
+            onChange={(e) => updateForm('date')(e.target.value)}
           />
         </div>
         <button
           type="submit"
-          className="rounded-md px-3 py-2 text-sm font-semibold"
-          style={{ backgroundColor: THEME.accent, color: THEME.base }}
+          className="rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-50"
+          style={{ backgroundColor: 'var(--accent)', color: 'var(--base)' }}
+          disabled={submitting || !form.driver || !form.truck || !form.date}
         >
-          Assign
+          {submitting ? 'Assigning...' : 'Assign'}
         </button>
-        {error && <div className="text-xs text-red-600">{error}</div>}
+        {(formError || assignmentsError) && (
+          <div className="text-xs text-red-600">
+            {formError || assignmentsError}
+          </div>
+        )}
       </form>
 
-      <ul className="divide-y" style={{ borderColor: THEME.line }}>
-        {(items ?? []).map((a) => (
+      {loadingAssignments && (
+        <div className="text-sm text-gray-500">Carregando assignments...</div>
+      )}
+
+      <ul
+        className="divide-y"
+        style={{ borderColor: 'var(--line)' }}
+        aria-busy={loadingAssignments}
+      >
+        {assignments.map((a) => (
           <li key={a.id} className="flex items-center justify-between py-2">
             <span>
-              #{a.id} — Driver {a.driver} — Truck {a.truck} — {a.date}
+              #{a.id} — Driver {driversById.get(a.driver)?.name ?? a.driver} —
+              Truck {trucksById.get(a.truck)?.plate ?? a.truck} —{' '}
+              {new Date(a.date).toLocaleDateString()}
             </span>
           </li>
         ))}
@@ -169,34 +169,20 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
 
       <div className="flex items-center gap-2">
         <button
-          className="rounded-md px-3 py-1 text-sm"
+          className="rounded-md px-3 py-1 text-sm disabled:opacity-50"
           type="button"
-          style={{
-            border: `1px solid ${THEME.line}`,
-            backgroundColor: 'white',
-            opacity: prevUrl ? 1 : 0.5,
-          }}
-          disabled={!prevUrl}
-          onClick={() => {
-            setPage((p) => Math.max(1, p - 1));
-            if (prevUrl) void loadAssignments(prevUrl);
-          }}
+          style={{ border: '1px solid var(--line)', backgroundColor: 'white' }}
+          disabled={!prevUrl || loadingAssignments}
+          onClick={() => prevUrl && loadAssignments(prevUrl)}
         >
           Previous
         </button>
         <button
-          className="rounded-md px-3 py-1 text-sm"
+          className="rounded-md px-3 py-1 text-sm disabled:opacity-50"
           type="button"
-          style={{
-            border: `1px solid ${THEME.line}`,
-            backgroundColor: 'white',
-            opacity: nextUrl ? 1 : 0.5,
-          }}
-          disabled={!nextUrl}
-          onClick={() => {
-            setPage((p) => p + 1);
-            if (nextUrl) void loadAssignments(nextUrl);
-          }}
+          style={{ border: '1px solid var(--line)', backgroundColor: 'white' }}
+          disabled={!nextUrl || loadingAssignments}
+          onClick={() => nextUrl && loadAssignments(nextUrl)}
         >
           Next
         </button>
