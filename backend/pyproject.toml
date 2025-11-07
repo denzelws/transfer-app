@@ -1,0 +1,27 @@
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+exclude = '''
+/(
+    \.venv
+  | \.mypy_cache
+  | \.pytest_cache
+  | build
+  | dist
+  | migrations
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_glob = ["**/migrations/*", "**/.venv/*"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E", "F", "I"]
+exclude = [".venv", "migrations", "build", "dist", ".pytest_cache", ".mypy_cache"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api", "drivers", "trucks", "assignments"]

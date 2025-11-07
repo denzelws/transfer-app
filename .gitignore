@@ -1,0 +1,98 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# ---- Virtualenv ----
+.venv/
+venv/
+ENV/
+env/
+*.env
+*.venv
+
+# ---- Django ----
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+.collected_static/
+*.mo
+
+# Local settings overrides
+local_settings.py
+
+# Django debug toolbar
+debug_toolbar/
+
+# ---- Migrations cache (NÃO ignore as migrações .py geradas) ----
+# Atenção: não ignore drivers/migrations/*.py nem trucks/migrations/*.py
+# Só ignore artefatos temporários:
+*/migrations/__pycache__/
+*/migrations/*.pyc
+
+# ---- Logs ----
+*.log
+logs/
+celerybeat-schedule
+celerybeat.pid
+
+# ---- Coverage / Test ----
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.pytest_cache/
+.mypy_cache/
+.pyre/
+.cache/
+*.pytest_cache/
+
+# ---- IDE / Editor ----
+.vscode/
+.idea/
+*.code-workspace
+
+# ---- OS files ----
+.DS_Store
+Thumbs.db
+
+# ---- Node / Frontend (se aparecer) ----
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnp.*
+.pnp.js
+.cache/
+.next/
+out/
+coverage/
+build/
+dist/
+.browserslistrc
+
+# ---- Env files / secrets ----
+.env
+.env.*
+*.secret
+secrets/*.json
+
+# ---- Docker ----
+docker-data/
+.docker/
+*.pid
+
+# ---- Misc ----
+*.swp
+*.swo
+*.orig
+*.rej
