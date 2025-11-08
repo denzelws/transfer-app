@@ -6,15 +6,17 @@ import { usePaginatedResource } from '@/hooks/usePaginatedResource';
 import { api } from '@/api';
 import type { Assignment, Driver, Truck } from '@/types/types';
 import { handleHttpError } from '@/utils/errors';
+import { AssignmentModal } from '../AssignmentModal';
 import type { UiTheme } from '../Drivers';
 
 type CSSVars = React.CSSProperties & Record<`--${string}`, string>;
 
+const INITIAL_URL = '/assignments/?page_size=5&ordering=-date';
+
 export default function Assignments({ THEME }: { THEME: UiTheme }) {
+  // Base data
   const { items: drivers } = useList<Driver>('/drivers/');
   const { items: trucks } = useList<Truck>('/trucks/');
-  const INITIAL_URL = '/assignments/?page_size=5&ordering=-date';
-
   const {
     items: assignments,
     nextUrl,
@@ -24,13 +26,17 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
     load: loadAssignments,
   } = usePaginatedResource<Assignment>(INITIAL_URL);
 
+  // Form state (create)
   const [form, setForm] = React.useState({ driver: '', truck: '', date: '' });
   const [formError, setFormError] = React.useState('');
   const [submitting, setSubmitting] = React.useState(false);
 
-  const updateForm = (k: keyof typeof form) => (v: string) =>
-    setForm((f) => ({ ...f, [k]: v }));
+  // Modal state (edit/delete)
+  const [modalOpen, setModalOpen] = React.useState(false);
+  const [current, setCurrent] = React.useState<Assignment | null>(null);
+  const [modalBusy, setModalBusy] = React.useState(false);
 
+  // Derived maps for quick lookups
   const driversById = React.useMemo(
     () => new Map(drivers.map((d) => [d.id, d])),
     [drivers],
@@ -40,47 +46,29 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
     [trucks],
   );
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setFormError('');
-    if (!form.driver || !form.truck || !form.date) {
-      setFormError('Preencha todos os campos');
-      return;
-    }
-    setSubmitting(true);
-    try {
-      await api.post('/assignments/', {
-        driver: Number(form.driver),
-        truck: Number(form.truck),
-        date: form.date,
-      });
-      setForm({ driver: '', truck: '', date: '' });
-      await loadAssignments(INITIAL_URL);
-    } catch (err) {
-      handleHttpError(err, setFormError);
-    } finally {
-      setSubmitting(false);
-    }
-  }
+  // Helpers
+  const updateForm = (k: keyof typeof form) => (v: string) =>
+    setForm((f) => ({ ...f, [k]: v }));
 
-  function getDriverName(
-    aDriver: Assignment['driver'],
-    driversById: Map<number, Driver>,
-  ) {
+  function getDriverName(aDriver: Assignment['driver']) {
     if (typeof aDriver === 'object' && aDriver && 'name' in aDriver) {
       return (aDriver as Driver).name;
     }
     return driversById.get(aDriver as number)?.name ?? `Driver ${aDriver}`;
   }
 
-  function getTruckPlate(
-    aTruck: Assignment['truck'],
-    trucksById: Map<number, Truck>,
-  ) {
+  function getTruckPlate(aTruck: Assignment['truck']) {
     if (typeof aTruck === 'object' && aTruck && 'plate' in aTruck) {
       return (aTruck as Truck).plate;
     }
     return trucksById.get(aTruck as number)?.plate ?? `Truck ${aTruck}`;
+  }
+
+  function formatISODateToUSShort(iso: string) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-'); // YYYY-MM-DD
+    const yy = y.slice(-2);
+    return `${m}/${d}/${yy}`; // MM/DD/YY
   }
 
   const orderedAssignments = React.useMemo(() => {
@@ -91,24 +79,92 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
     });
   }, [assignments]);
 
-  function formatISODateToUS(iso: string) {
-    if (!iso) return '';
-    const [y, m, d] = iso.split('-');
-    return `${m}/${d}/${y}`;
+  // Create
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFormError('');
+    if (!form.driver || !form.truck || !form.date) {
+      setFormError('Please fill all fields');
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await api.post('/assignments/', {
+        driver: Number(form.driver),
+        truck: Number(form.truck),
+        date: form.date, // YYYY-MM-DD from <input type="date">
+      });
+      setForm({ driver: '', truck: '', date: '' });
+      await loadAssignments(INITIAL_URL); // back to first page with ordering
+    } catch (err) {
+      handleHttpError(err, setFormError);
+    } finally {
+      setSubmitting(false);
+    }
   }
 
+  // Modal control
+  function openModal(a: Assignment) {
+    setCurrent(a);
+    setModalOpen(true);
+  }
+  function closeModal() {
+    setModalOpen(false);
+    setCurrent(null);
+  }
+
+  // Edit (PATCH)
+  async function handleModalSave(payload: {
+    id: number;
+    driver: number;
+    truck: number;
+    date: string;
+  }) {
+    setModalBusy(true);
+    try {
+      await api.patch(`/assignments/${payload.id}/`, {
+        driver: payload.driver,
+        truck: payload.truck,
+        date: payload.date, // YYYY-MM-DD
+      });
+      await loadAssignments(INITIAL_URL);
+      closeModal();
+    } catch (err) {
+      // Optional: display inside modal by lifting state up; for now log
+      console.error(err);
+    } finally {
+      setModalBusy(false);
+    }
+  }
+
+  // Delete
+  async function handleModalDelete(id: number) {
+    if (!window.confirm('Delete this assignment?')) return;
+    setModalBusy(true);
+    try {
+      await api.delete(`/assignments/${id}/`);
+      await loadAssignments(INITIAL_URL);
+      closeModal();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setModalBusy(false);
+    }
+  }
+
+  const themeVars: CSSVars = {
+    '--line': THEME.line,
+    '--accent': THEME.accent,
+    '--base': THEME.base,
+  };
+
   return (
-    <div
-      className="space-y-4"
-      style={
-        {
-          '--line': THEME.line,
-          '--accent': THEME.accent,
-          '--base': THEME.base,
-        } as CSSVars
-      }
-    >
-      <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-3">
+    <div className="space-y-4" style={themeVars}>
+      <form
+        onSubmit={onSubmit}
+        className="flex flex-wrap items-end gap-3"
+        aria-busy={submitting}
+      >
         <div>
           <label htmlFor="driver" className="mb-1 block text-xs">
             Driver
@@ -128,6 +184,7 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
             ))}
           </select>
         </div>
+
         <div>
           <label htmlFor="truck" className="mb-1 block text-xs">
             Truck
@@ -147,6 +204,7 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
             ))}
           </select>
         </div>
+
         <div>
           <label htmlFor="date" className="mb-1 block text-xs">
             Date
@@ -160,23 +218,25 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
             onChange={(e) => updateForm('date')(e.target.value)}
           />
         </div>
+
         <button
           type="submit"
-          className="rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-50"
+          className="h-10 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-50"
           style={{ backgroundColor: 'var(--accent)', color: 'var(--base)' }}
           disabled={submitting || !form.driver || !form.truck || !form.date}
         >
           {submitting ? 'Assigning...' : 'Assign'}
         </button>
+
         {(formError || assignmentsError) && (
-          <div className="text-xs text-red-600">
+          <div className="text-xs text-red-600" aria-live="polite">
             {formError || assignmentsError}
           </div>
         )}
       </form>
 
       {loadingAssignments && (
-        <div className="text-sm text-gray-500">Carregando assignments...</div>
+        <div className="text-sm text-gray-500">Loading assignments...</div>
       )}
 
       <ul
@@ -188,9 +248,9 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
         aria-busy={loadingAssignments}
       >
         {orderedAssignments.map((a) => {
-          const driverName = getDriverName(a.driver, driversById);
-          const truckPlate = getTruckPlate(a.truck, trucksById);
-          const date = formatISODateToUS(a.date);
+          const driverName = getDriverName(a.driver);
+          const truckPlate = getTruckPlate(a.truck);
+          const date = formatISODateToUSShort(a.date);
 
           return (
             <li key={a.id}>
@@ -220,7 +280,20 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
                     {date}
                   </div>
                 </div>
-                {/* Espaço para futuras ações (ex.: remover/editar) */}
+
+                <div className="shrink-0">
+                  <button
+                    type="button"
+                    className="rounded-md px-2 py-1 text-xs"
+                    style={{
+                      border: '1px solid var(--line)',
+                      backgroundColor: 'white',
+                    }}
+                    onClick={() => openModal(a)}
+                  >
+                    Edit
+                  </button>
+                </div>
               </div>
             </li>
           );
@@ -247,6 +320,18 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
           Next
         </button>
       </div>
+
+      <AssignmentModal
+        open={modalOpen}
+        onClose={closeModal}
+        onSave={handleModalSave}
+        onDelete={handleModalDelete}
+        assignment={current}
+        drivers={drivers}
+        trucks={trucks}
+        submitting={modalBusy}
+        theme={THEME}
+      />
     </div>
   );
 }

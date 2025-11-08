@@ -245,7 +245,7 @@ export default function Trucks({ THEME }: { THEME: UiTheme }) {
         </div>
         <button
           type="submit"
-          className="rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-50"
+          className="h-10 rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-50"
           style={{ backgroundColor: 'var(--accent)', color: 'var(--base)' }}
           disabled={
             submitting || loading || !form.plate || !form.model || !form.year
