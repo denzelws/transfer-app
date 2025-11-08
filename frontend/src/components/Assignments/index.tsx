@@ -13,6 +13,8 @@ type CSSVars = React.CSSProperties & Record<`--${string}`, string>;
 export default function Assignments({ THEME }: { THEME: UiTheme }) {
   const { items: drivers } = useList<Driver>('/drivers/');
   const { items: trucks } = useList<Truck>('/trucks/');
+  const INITIAL_URL = '/assignments/?page_size=5&ordering=-date';
+
   const {
     items: assignments,
     nextUrl,
@@ -20,9 +22,7 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
     isLoading: loadingAssignments,
     error: assignmentsError,
     load: loadAssignments,
-  } = usePaginatedResource<Assignment>(
-    '/assignments/?page_size=5&ordering=-date',
-  );
+  } = usePaginatedResource<Assignment>(INITIAL_URL);
 
   const [form, setForm] = React.useState({ driver: '', truck: '', date: '' });
   const [formError, setFormError] = React.useState('');
@@ -55,7 +55,7 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
         date: form.date,
       });
       setForm({ driver: '', truck: '', date: '' });
-      await loadAssignments();
+      await loadAssignments(INITIAL_URL);
     } catch (err) {
       handleHttpError(err, setFormError);
     } finally {
@@ -81,6 +81,20 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
       return (aTruck as Truck).plate;
     }
     return trucksById.get(aTruck as number)?.plate ?? `Truck ${aTruck}`;
+  }
+
+  const orderedAssignments = React.useMemo(() => {
+    return [...assignments].sort((a, b) => {
+      if (a.date < b.date) return 1;
+      if (a.date > b.date) return -1;
+      return (b.id ?? 0) - (a.id ?? 0);
+    });
+  }, [assignments]);
+
+  function formatISODateToUS(iso: string) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${m}/${d}/${y}`;
   }
 
   return (
@@ -173,10 +187,10 @@ export default function Assignments({ THEME }: { THEME: UiTheme }) {
         }}
         aria-busy={loadingAssignments}
       >
-        {assignments.map((a) => {
+        {orderedAssignments.map((a) => {
           const driverName = getDriverName(a.driver, driversById);
           const truckPlate = getTruckPlate(a.truck, trucksById);
-          const date = new Date(a.date).toLocaleDateString();
+          const date = formatISODateToUS(a.date);
 
           return (
             <li key={a.id}>

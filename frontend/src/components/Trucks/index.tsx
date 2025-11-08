@@ -204,12 +204,18 @@ export default function Trucks({ THEME }: { THEME: UiTheme }) {
             className="rounded-md border px-3 py-2"
             style={{ borderColor: 'var(--line)' }}
             value={form.year}
-            onChange={(e) =>
-              setForm({
-                ...form,
-                year: e.currentTarget.valueAsNumber || currentYear,
-              })
-            }
+            onChange={(e) => {
+              const raw = e.target.value;
+              const num = Number(raw);
+              setForm((prev) => ({
+                ...prev,
+                year: !raw
+                  ? currentYear
+                  : Number.isNaN(num)
+                    ? currentYear
+                    : num,
+              }));
+            }}
             min={1950}
             max={currentYear + 1}
           />
@@ -342,12 +348,18 @@ export default function Trucks({ THEME }: { THEME: UiTheme }) {
                   value={values.year}
                   min={1950}
                   max={currentYear + 1}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    const num = Number(raw);
                     setValues((prev: TruckEditValues) => ({
                       ...prev,
-                      year: e.currentTarget.valueAsNumber || currentYear,
-                    }))
-                  }
+                      year: !raw
+                        ? currentYear
+                        : Number.isNaN(num)
+                          ? currentYear
+                          : num,
+                    }));
+                  }}
                 />
               </div>
               <div>
