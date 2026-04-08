@@ -1,18 +1,18 @@
-### README – Loadsmart Technical Test (Drivers, Trucks, Assignments)
+### README – Loadsmart Technical Test (Drivers, Trucks, Transfers)
 
 #### Overview
-This project is a Django + Django REST Framework (DRF) web API for managing drivers, trucks, and daily driver–truck assignments.
+This project is a Django + Django REST Framework (DRF) web API for managing drivers, trucks, and daily driver–truck transfers.
 
 #### Business Rules
-- A driver can be assigned to at most one truck per day.
-- A truck can be assigned to at most one driver per day.
+- A driver can be assigned to at most one truck transfer per day.
+- A truck can be assigned to at most one driver transfer per day.
 - A driver’s license must meet or exceed the truck’s minimum required license type.
 - List endpoints support filtering, ordering, and pagination.
 
 #### Apps
 - `drivers`: CRUD for drivers.
 - `trucks`: CRUD for trucks.
-- `assignments`: CRUD for assignments with business validations.
+- `transfers`: CRUD for transfers with business validations.
 
 ---
 
