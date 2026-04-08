@@ -1,7 +1,7 @@
-### README – Loadsmart Technical Test (Drivers, Trucks, Transfers)
+### README – Fleet Intelligence (Drivers, Trucks, Transfers)
 
 #### Overview
-This project is a Django + Django REST Framework (DRF) web API for managing drivers, trucks, and daily driver–truck transfers.
+This project is a Django + Django REST Framework (DRF) web API for Loadsmart Fleet Intelligence, managing drivers, trucks, and daily driver–truck transfers.
 
 #### Business Rules
 - A driver can be assigned to at most one truck transfer per day.
@@ -20,6 +20,6 @@ This project is a Django + Django REST Framework (DRF) web API for managing driv
 - Python 3.10+
 - pip
 - Virtual environment tool (`venv`)
-- SQLite (default; no setup required)
+- SQLite (default database)
 
 ---
