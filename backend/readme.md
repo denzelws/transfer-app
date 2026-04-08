@@ -1,7 +1,7 @@
-### README – Backend (Drivers, Trucks, Transfers)
+### README – Fleet Intelligence (Backend API)
 
 #### Overview
-This project is a Django + Django REST Framework (DRF) web API for Loadsmart Fleet Intelligence, managing drivers, trucks, and daily driver–truck transfers.
+This repository contains the backend API for Loadsmart Fleet Intelligence, built with Django and Django REST Framework (DRF). It manages the core data and business logic for drivers, trucks, and daily driver–truck transfers.
 
 #### Business Rules
 - A driver can be assigned to at most one truck transfer per day.
