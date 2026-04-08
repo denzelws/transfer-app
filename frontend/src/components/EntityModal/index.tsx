@@ -1,3 +1,4 @@
+import { Tag } from '@/ui';
 import { Avatar } from '@/ui/Avatar';
 import React from 'react';
 import Modal from '../Modal';
@@ -9,8 +10,8 @@ export type EntityModalProps<TValues> = {
     title: string;
     badge?: string;
     subtitle?: string;
-    avatarSeed?: string; // NEW
-    iconFallback?: React.ReactNode; // NEW
+    avatarSeed?: string;
+    iconFallback?: React.ReactNode;
   };
   values: TValues;
   setValues: (updater: (prev: TValues) => TValues) => void;
@@ -22,7 +23,6 @@ export type EntityModalProps<TValues> = {
   onDelete?: () => Promise<void>;
   busy?: boolean;
   error?: string;
-  accentColor?: string;
 };
 
 export default function EntityModal<TValues>({
@@ -36,93 +36,228 @@ export default function EntityModal<TValues>({
   onDelete,
   busy = false,
   error,
-  accentColor = '#14D64D',
 }: EntityModalProps<TValues>) {
   return (
-    <Modal open={open} onClose={busy ? () => {} : onClose} title={header.title}>
-      <div className="space-y-4">
-        {/* Header com Avatar */}
-        <div className="flex items-center gap-3">
-          <div className="relative inline-flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+    <Modal open={open} onClose={busy ? () => {} : onClose} title={undefined}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+        {/* ── Header row ── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* Icon / Avatar */}
+          <div
+            style={{
+              width: 56,
+              height: 56,
+              borderRadius: '0.75rem',
+              background: '#f2f3ff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden',
+              flexShrink: 0,
+            }}
+          >
             {header.avatarSeed ? (
-              <Avatar
-                name={header.avatarSeed}
-                className="h-12 w-12"
-                size={48}
-                variant="beam"
-              />
+              <Avatar name={header.avatarSeed} size={56} variant="beam" />
             ) : (
-              (header.iconFallback ?? <i className="fa-regular fa-square" />)
+              <div style={{ fontSize: 22, color: '#94a3b8' }}>
+                {header.iconFallback ?? <i className="fa-regular fa-square" />}
+              </div>
             )}
           </div>
 
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between">
-              <span className="truncate text-sm font-semibold text-gray-900">
+          {/* Title + badge */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 8,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: '1.25rem',
+                  fontWeight: 700,
+                  letterSpacing: '-0.02em',
+                  color: '#020617',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {header.title}
               </span>
               {header.badge && (
-                <span
-                  className="ml-3 shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium"
-                  style={{ borderColor: '#D6DFE8', color: '#475569' }}
-                >
+                <Tag className="shrink-0 rounded-sm border-none bg-violet-600/10 text-violet-600">
                   {header.badge}
-                </span>
+                </Tag>
               )}
             </div>
             {header.subtitle && (
-              <p className="mt-0.5 text-xs text-gray-500">{header.subtitle}</p>
+              <p
+                style={{
+                  fontSize: '0.6875rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.06em',
+                  textTransform: 'uppercase',
+                  color: '#94a3b8',
+                  marginTop: 4,
+                }}
+              >
+                {header.subtitle}
+              </p>
             )}
+          </div>
+
+          {/* Close button */}
+          <button
+            type="button"
+            onClick={busy ? undefined : onClose}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              borderRadius: '50%',
+              background: '#f2f3ff',
+              border: 'none',
+              color: '#64748b',
+              cursor: busy ? 'not-allowed' : 'pointer',
+              flexShrink: 0,
+            }}
+          >
+            <i className="fa-solid fa-xmark" style={{ fontSize: 13 }} />
+          </button>
+        </div>
+
+        {/* ── Form area — surface-l1 wrap + surface-l3 inner ── */}
+        <div
+          style={{
+            background: '#f2f3ff' /* surface-l1 */,
+            borderRadius: '0.75rem',
+            padding: 4,
+          }}
+        >
+          <div
+            style={{
+              background: '#ffffff' /* surface-l3 */,
+              borderRadius: '0.625rem',
+              padding: '1.25rem',
+            }}
+          >
+            {renderForm({ values, setValues })}
           </div>
         </div>
 
-        {/* Form genérico */}
-        <div className="space-y-3">{renderForm({ values, setValues })}</div>
+        {/* ── Error state ── */}
+        {error && (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: '#ffd9d9',
+              borderRadius: '0.375rem',
+              padding: '10px 14px',
+              fontSize: '0.6875rem',
+              fontWeight: 700,
+              letterSpacing: '0.04em',
+              textTransform: 'uppercase',
+              color: '#ba1a1a',
+            }}
+          >
+            <i
+              className="fa-solid fa-circle-exclamation"
+              style={{ fontSize: 13 }}
+            />
+            {error}
+          </div>
+        )}
 
-        {error && <div className="text-xs text-red-600">{error}</div>}
-
-        {/* Ações */}
-        <div className="flex items-center justify-between pt-2">
+        {/* ── Action buttons ── */}
+        <div style={{ display: 'flex', gap: 12 }}>
           {onDelete ? (
             <button
               type="button"
               onClick={onDelete}
               disabled={busy}
-              className="rounded-md px-3 py-2 text-sm font-semibold text-red-600 disabled:opacity-50"
               style={{
-                border: '1px solid rgba(0,0,0,0.08)',
-                backgroundColor: '#fff',
+                flex: 1,
+                height: 44,
+                borderRadius: '0.375rem',
+                background: '#f2f3ff',
+                border: 'none',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#64748b',
+                cursor: busy ? 'not-allowed' : 'pointer',
+                opacity: busy ? 0.5 : 1,
+                transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={(e) => {
+                if (!busy) {
+                  e.currentTarget.style.background = '#ffd9d9';
+                  e.currentTarget.style.color = '#ba1a1a';
+                }
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = '#f2f3ff';
+                e.currentTarget.style.color = '#64748b';
               }}
             >
-              Delete
+              Terminate
             </button>
           ) : (
-            <span />
-          )}
-
-          <div className="flex gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={busy ? undefined : onClose}
               disabled={busy}
-              className="rounded-md px-3 py-2 text-sm disabled:opacity-50"
               style={{
-                border: '1px solid rgba(0,0,0,0.08)',
-                backgroundColor: '#fff',
+                flex: 1,
+                height: 44,
+                borderRadius: '0.375rem',
+                background: '#f2f3ff',
+                border: 'none',
+                fontSize: '0.6875rem',
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+                color: '#64748b',
+                cursor: busy ? 'not-allowed' : 'pointer',
+                opacity: busy ? 0.5 : 1,
               }}
             >
               Cancel
             </button>
-            <button
-              type="button"
-              onClick={onSave}
-              disabled={busy}
-              className="rounded-md px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              style={{ backgroundColor: accentColor }}
-            >
-              {busy ? 'Saving...' : 'Save'}
-            </button>
-          </div>
+          )}
+
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={busy}
+            style={{
+              flex: 2,
+              height: 44,
+              borderRadius: '0.375rem',
+              background: 'linear-gradient(135deg, #630ed4 0%, #7c3aed 100%)',
+              border: 'none',
+              fontSize: '0.6875rem',
+              fontWeight: 700,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: '#ffffff',
+              cursor: busy ? 'not-allowed' : 'pointer',
+              boxShadow: '0 4px 16px rgba(124,58,237,0.25)',
+              opacity: busy ? 0.6 : 1,
+              transition: 'opacity 0.15s, transform 0.15s',
+            }}
+          >
+            {busy ? 'Processing...' : 'Save Changes'}
+          </button>
         </div>
       </div>
     </Modal>

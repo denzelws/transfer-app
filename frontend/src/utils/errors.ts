@@ -1,15 +1,19 @@
 import type { HttpError } from '@/types/http';
 
 export function toErrorMessage(err: HttpError): string {
-  if (err.response?.data !== undefined) {
-    if (typeof err.response.data === 'string') return err.response.data;
+  const data = err.response?.data;
+
+  if (data !== undefined) {
+    if (typeof data === 'string') return data;
+
     try {
-      return JSON.stringify(err.response.data);
+      return JSON.stringify(data);
     } catch {
-      return 'Error';
+      return 'System error: Unable to parse response';
     }
   }
-  return err.message ?? 'Error';
+
+  return err.message ?? 'Unknown connection error';
 }
 
 export function handleHttpError(

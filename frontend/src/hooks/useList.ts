@@ -1,4 +1,3 @@
-// hooks/useList.ts
 import { api } from '@/api';
 import type { HttpError } from '@/types/http';
 import { useCallback, useEffect, useState } from 'react';
@@ -19,18 +18,17 @@ export function useList<T>(path: string) {
       setItems(Array.isArray(data) ? data : []);
     } catch (err) {
       const httpErr = err as HttpError;
-      const msg =
-        httpErr.response?.data !== undefined
-          ? typeof httpErr.response.data === 'string'
+      let msg = 'An unexpected error occurred';
+
+      if (httpErr.response?.data) {
+        msg =
+          typeof httpErr.response.data === 'string'
             ? httpErr.response.data
-            : (() => {
-                try {
-                  return JSON.stringify(httpErr.response.data);
-                } catch {
-                  return 'Error';
-                }
-              })()
-          : (httpErr.message ?? 'Error');
+            : JSON.stringify(httpErr.response.data);
+      } else if (httpErr.message) {
+        msg = httpErr.message;
+      }
+
       setItems([]);
       setErr(msg);
     } finally {

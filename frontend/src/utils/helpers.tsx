@@ -8,6 +8,5 @@ export function toRelativePath(url: string): string {
 }
 
 export function stripApiPrefix(path: string): string {
-  // "/api/assignments" -> "/assignments"
   return path.replace(/^\/api(\/|$)/, '/');
 }

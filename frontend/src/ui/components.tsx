@@ -1,66 +1,144 @@
 import React from 'react';
-import { THEME, alpha } from './theme';
 
-export const IconBtn: React.FC<{
+/* ─────────────────────────────────────────────────────────────────
+   IconBtn — sidebar navigation button
+───────────────────────────────────────────────────────────────── */
+interface IconBtnProps {
   children: React.ReactNode;
   label?: string;
   onClick?: () => void;
-}> = ({ children, label, onClick }) => (
+  className?: string;
+}
+
+export const IconBtn: React.FC<IconBtnProps> = ({
+  children,
+  label,
+  onClick,
+  className = '',
+}) => (
   <button
     type="button"
     onClick={onClick}
-    className="group relative flex h-12 w-12 items-center justify-center rounded-xl transition"
-    style={{
-      backgroundColor: THEME.base,
-      border: `1px solid ${THEME.line}`,
-      boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-    }}
+    className={`group relative flex h-10 w-10 items-center justify-center rounded-xl transition-all active:scale-95 ${className}`}
     aria-label={label || 'icon'}
   >
-    <span style={{ color: THEME.accent }}>{children}</span>
+    {children}
     {label && (
-      <span
-        className="pointer-events-none absolute left-14 rounded-md px-2 py-1 text-xs whitespace-nowrap opacity-0 transition group-hover:opacity-100"
-        style={{ backgroundColor: THEME.secondary, color: THEME.base }}
-      >
+      <span className="pointer-events-none absolute left-full z-50 ml-4 rounded-md bg-slate-950 px-2 py-1 text-[10px] font-bold tracking-widest whitespace-nowrap text-white uppercase opacity-0 transition-opacity group-hover:opacity-100">
         {label}
       </span>
     )}
   </button>
 );
 
-export const Tag: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+/* ─────────────────────────────────────────────────────────────────
+   Tag — generic pill. Kept round for non-status labels.
+   For status chips use the .chip-* CSS classes from global.css.
+───────────────────────────────────────────────────────────────── */
+interface TagProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const Tag: React.FC<TagProps> = ({ children, className = '' }) => (
   <span
-    className="rounded-full px-2 py-0.5 text-[11px] font-medium"
-    style={{ backgroundColor: alpha(THEME.accent, 0.12), color: THEME.accent }}
+    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold tracking-wider uppercase ${className}`}
   >
     {children}
   </span>
 );
 
-export const Card: React.FC<{
+type ChipVariant = 'success' | 'error' | 'info' | 'warn' | 'neutral';
+
+interface StatusChipProps {
   children: React.ReactNode;
-  elevated?: boolean;
-}> = ({ children, elevated }) => (
-  <div
-    className={`rounded-2xl ${elevated ? 'shadow-md' : 'shadow-sm'}`}
-    style={{ backgroundColor: THEME.base, border: `1px solid ${THEME.line}` }}
-  >
-    {children}
+  variant?: ChipVariant;
+  className?: string;
+}
+
+export const StatusChip: React.FC<StatusChipProps> = ({
+  children,
+  variant = 'neutral',
+  className = '',
+}) => <span className={`chip chip-${variant} ${className}`}>{children}</span>;
+
+interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export const Card: React.FC<CardProps> = ({ children, className = '' }) => (
+  <div className={`overflow-hidden ${className}`}>{children}</div>
+);
+
+interface SectionTitleProps {
+  children: React.ReactNode;
+  right?: React.ReactNode;
+  className?: string;
+}
+
+export const SectionTitle: React.FC<SectionTitleProps> = ({
+  children,
+  right,
+  className = '',
+}) => (
+  <div className={`flex items-center justify-between ${className}`}>
+    <h3 className="label-sm text-slate-400">{children}</h3>
+    {right}
   </div>
 );
 
-export const SectionTitle: React.FC<{
-  children: React.ReactNode;
-  right?: React.ReactNode;
-}> = ({ children, right }) => (
-  <div className="flex items-center justify-between px-5 pt-5">
-    <h3
-      className="text-sm font-semibold"
-      style={{ color: 'rgba(32,41,49,0.9)' }}
+/* ─────────────────────────────────────────────────────────────────
+   PrecisionInput — compact 36px input aligned to design tokens
+───────────────────────────────────────────────────────────────── */
+interface PrecisionInputProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+}
+
+export const PrecisionInput: React.FC<PrecisionInputProps> = ({
+  label,
+  id,
+  className = '',
+  ...props
+}) => (
+  <div className="flex flex-col gap-1.5">
+    {label && (
+      <label htmlFor={id} className="label-sm ml-1 text-slate-500">
+        {label}
+      </label>
+    )}
+    <input id={id} className={`input-precision ${className}`} {...props} />
+  </div>
+);
+
+/* ─────────────────────────────────────────────────────────────────
+   PrecisionSelect — compact 36px select
+───────────────────────────────────────────────────────────────── */
+interface PrecisionSelectProps
+  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  label?: string;
+}
+
+export const PrecisionSelect: React.FC<PrecisionSelectProps> = ({
+  label,
+  id,
+  className = '',
+  children,
+  ...props
+}) => (
+  <div className="flex flex-col gap-1.5">
+    {label && (
+      <label htmlFor={id} className="label-sm ml-1 text-slate-500">
+        {label}
+      </label>
+    )}
+    <select
+      id={id}
+      className={`input-precision cursor-pointer appearance-none ${className}`}
+      {...props}
     >
       {children}
-    </h3>
-    {right}
+    </select>
   </div>
 );

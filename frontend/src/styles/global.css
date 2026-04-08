@@ -1,2 +1,190 @@
 @import '@fortawesome/fontawesome-free/css/all.min.css';
 @import 'tailwindcss';
+
+@theme {
+  --color-primary: #7c3aed;
+  --color-primary-dark: #630ed4;
+  --color-secondary: #1b6b51;
+  --color-error: #ba1a1a;
+
+  --color-surface-l0: #faf8ff;
+  --color-surface-l1: #f2f3ff;
+  --color-surface-l2: #eaedff;
+  --color-surface-l3: #ffffff;
+
+  --color-chip-success-bg: #a6f2d1;
+  --color-chip-success-fg: #237157;
+  --color-chip-error-bg: #ffd9d9;
+  --color-chip-error-fg: #ba1a1a;
+  --color-chip-info-bg: #dde3ff;
+  --color-chip-info-fg: #1b4fc0;
+  --color-chip-warn-bg: #fff3cd;
+  --color-chip-warn-fg: #92600a;
+
+  --color-sidebar: #0f172a;
+
+  --color-ghost-border: rgba(204, 195, 216, 0.15);
+  --font-display: 'Inter', 'ui-sans-serif', 'system-ui';
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-surface-l0 text-slate-900 antialiased;
+    font-family: 'Inter', ui-sans-serif, system-ui;
+    font-feature-settings:
+      'ss01' on,
+      'cv01' on;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--color-ghost-border);
+  }
+
+  .sidebar-glass {
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #630ed4 0%, #7c3aed 100%);
+    color: #ffffff;
+    border: none;
+    border-radius: 0.375rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.15s ease;
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.25);
+  }
+  .btn-primary:hover {
+    transform: scale(1.02);
+    box-shadow: 0 6px 24px rgba(124, 58, 237, 0.35);
+  }
+  .btn-primary:active {
+    transform: scale(0.97);
+  }
+
+  .btn-secondary {
+    background: var(--color-surface-l2);
+    color: var(--color-primary);
+    border: none;
+    border-radius: 0.375rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: background 0.15s ease;
+  }
+  .btn-secondary:hover {
+    background: var(--color-surface-l1);
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 0.125rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.6;
+  }
+  .chip-success {
+    background: var(--color-chip-success-bg);
+    color: var(--color-chip-success-fg);
+  }
+  .chip-error {
+    background: var(--color-chip-error-bg);
+    color: var(--color-chip-error-fg);
+  }
+  .chip-info {
+    background: var(--color-chip-info-bg);
+    color: var(--color-chip-info-fg);
+  }
+  .chip-warn {
+    background: var(--color-chip-warn-bg);
+    color: var(--color-chip-warn-fg);
+  }
+  .chip-neutral {
+    background: #e8eaf0;
+    color: #4b5568;
+  }
+
+  .input-precision {
+    background: var(--color-surface-l2);
+    border: none;
+    border-radius: 0.375rem;
+    height: 36px;
+    padding: 0 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #131b2e;
+    transition:
+      background 0.15s ease,
+      box-shadow 0.15s ease;
+    outline: none;
+    width: 100%;
+  }
+  .input-precision:focus {
+    background: #ffffff;
+    box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.4);
+  }
+
+  .shadow-ambient {
+    box-shadow: 0 32px 64px -16px rgba(19, 27, 46, 0.12);
+  }
+
+  .table-row-odd {
+    background: var(--color-surface-l3);
+  }
+  .table-row-even {
+    background: var(--color-surface-l1);
+  }
+
+  .display-md {
+    font-size: 2.75rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .headline-sm {
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+  }
+  .title-sm {
+    font-size: 1rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .body-md {
+    font-size: 0.875rem;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  .label-sm {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+}

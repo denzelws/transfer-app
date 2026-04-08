@@ -1,3 +1,4 @@
+import { Tag } from '@/ui';
 import { Avatar } from '@/ui/Avatar';
 import React from 'react';
 
@@ -6,7 +7,7 @@ export type EntityCardProps = {
   title: string;
   badge?: string;
   avatarSeed?: string;
-  iconFallback?: React.ReactNode; // mostra se não tiver avatarSeed
+  iconFallback?: React.ReactNode;
   onClick?: () => void;
 };
 
@@ -22,39 +23,39 @@ export default function EntityCard({
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-full items-center gap-3 rounded-xl border p-3 text-left transition hover:shadow-sm"
-      style={{ backgroundColor: '#FCFCFF', borderColor: '#E6ECF2' }}
+      className="group bg-surface-l0/50 hover:bg-surface-l1 hover:shadow-primary/5 flex w-full flex-col gap-6 rounded-[2rem] p-6 text-left transition-all duration-300 hover:scale-[1.02] hover:shadow-xl"
     >
-      <div className="relative">
-        <div className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg bg-gray-100">
+      <div className="flex w-full items-start justify-between">
+        <div className="group-hover:ring-primary/20 flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-100 transition-all">
           {avatarSeed ? (
-            <Avatar
-              name={avatarSeed}
-              className="h-10 w-10"
-              size={40}
-              variant="beam"
-            />
+            <Avatar name={avatarSeed} size={48} variant="beam" />
           ) : (
-            (iconFallback ?? <i className="fa-regular fa-square" />)
+            <div className="group-hover:text-primary text-xl text-slate-400 transition-colors">
+              {iconFallback ?? <i className="fa-regular fa-square" />}
+            </div>
           )}
         </div>
+
+        {badge && (
+          <Tag className="group-hover:bg-primary/10 group-hover:text-primary bg-slate-100 text-slate-500 transition-colors">
+            {badge}
+          </Tag>
+        )}
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center justify-between">
-          <span className="truncate text-sm font-semibold text-gray-900">
-            {title}
+      <div className="space-y-1">
+        <h5 className="text-base leading-tight font-black tracking-tight text-slate-900">
+          {title}
+        </h5>
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">
+            {kind}
           </span>
-          {badge && (
-            <span
-              className="ml-3 shrink-0 rounded-md border px-2 py-0.5 text-xs font-medium"
-              style={{ borderColor: '#D6DFE8', color: '#475569' }}
-            >
-              {badge}
-            </span>
-          )}
+          <span className="h-1 w-1 rounded-full bg-slate-300" />
+          <span className="text-primary text-[10px] font-bold tracking-tighter uppercase opacity-60">
+            System Verified
+          </span>
         </div>
-        <p className="mt-0.5 text-xs text-gray-500 capitalize">{kind}</p>
       </div>
     </button>
   );

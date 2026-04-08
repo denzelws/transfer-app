@@ -11,24 +11,29 @@ export function usePaginatedResource<T>(initialPath: string) {
   const [isLoading, setLoading] = useState<boolean>(false);
   const [error, setErr] = useState<string | null>(null);
 
-  function normalizePaginatedPayload<T>(data: ListPayload<T>): {
-    items: T[];
-    next: string | null;
-    prev: string | null;
-  } {
-    if (Array.isArray(data)) {
-      return { items: data, next: null, prev: null };
-    }
-    if (data && Array.isArray((data as Page<T>).results)) {
-      const p = data as Page<T>;
-      return {
-        items: p.results,
-        next: p.next ?? null,
-        prev: p.previous ?? null,
-      };
-    }
-    return { items: [], next: null, prev: null };
-  }
+  const normalizePaginatedPayload = useCallback(
+    <T>(
+      data: ListPayload<T>,
+    ): {
+      items: T[];
+      next: string | null;
+      prev: string | null;
+    } => {
+      if (Array.isArray(data)) {
+        return { items: data, next: null, prev: null };
+      }
+      if (data && Array.isArray((data as Page<T>).results)) {
+        const p = data as Page<T>;
+        return {
+          items: p.results,
+          next: p.next ?? null,
+          prev: p.previous ?? null,
+        };
+      }
+      return { items: [], next: null, prev: null };
+    },
+    [],
+  );
 
   const normalizedInitial = useMemo(
     () => stripApiPrefix(toRelativePath(initialPath)),
@@ -45,6 +50,7 @@ export function usePaginatedResource<T>(initialPath: string) {
         const r = await api.get(path);
         const payload = r.data as ListPayload<T>;
         const { items, next, prev } = normalizePaginatedPayload<T>(payload);
+
         setItems(items);
         setNextUrl(next ? stripApiPrefix(toRelativePath(next)) : null);
         setPrevUrl(prev ? stripApiPrefix(toRelativePath(prev)) : null);
@@ -57,7 +63,7 @@ export function usePaginatedResource<T>(initialPath: string) {
         setLoading(false);
       }
     },
-    [normalizedInitial],
+    [normalizedInitial, normalizePaginatedPayload],
   );
 
   useEffect(() => {

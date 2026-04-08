@@ -1,2 +1,10 @@
-export { Card, IconBtn, SectionTitle, Tag } from './components';
+export {
+  Card,
+  IconBtn,
+  PrecisionInput,
+  PrecisionSelect,
+  SectionTitle,
+  StatusChip,
+  Tag,
+} from './components';
 export { alpha, THEME } from './theme';
